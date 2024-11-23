@@ -1,5 +1,6 @@
 package com.weather.weatherapp.presentation.screens
 
+import android.icu.text.SimpleDateFormat
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,6 +42,8 @@ import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -125,18 +129,18 @@ fun HomeScreen(modifier: Modifier = Modifier, weatherResponseApi: WeatherRespons
 @Composable
 private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
     val item = calculateTempAccordingHour(hourly)
-    val colorState by remember {
-        mutableStateOf(false)
-    }
 
+    val daySelection = remember {
+        mutableStateOf("Today")
+    }
     Column {
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Button(
                 onClick = {
-
+                    daySelection.value = "Today"
                 }, colors = ButtonDefaults.buttonColors().copy(
-                    containerColor = colorResource(id = R.color.app_color),
+                    containerColor =  if (daySelection.value == "Today") colorResource(id = R.color.app_color) else colorResource(id = R.color.background_color),
                     contentColor = colorResource(id = R.color.white)
                 )
             ) {
@@ -147,9 +151,9 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
 
             Button(
                 onClick = {
-
+                    daySelection.value = "Tomorrow"
                 }, colors = ButtonDefaults.buttonColors().copy(
-                    containerColor = colorResource(id = R.color.app_color),
+                    containerColor =  if (daySelection.value == "Tomorrow") colorResource(id = R.color.app_color) else colorResource(id = R.color.background_color),
                     contentColor = colorResource(id = R.color.white)
                 )
             ) {
@@ -158,23 +162,24 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
         }
 
         LazyRow {
-            items(item.size) {
+
+            items(item.filter{daySelection.value == it.day }) {item->
                 Card(
                     colors = CardDefaults.cardColors().copy(
                         containerColor = colorResource(id = R.color.app_color)
                     ), modifier = Modifier.padding(start = 10.dp , top = 20.dp), shape = RoundedCornerShape(50.dp)
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Now", color = colorResource(id = R.color.white))
+                        Text(text = item.time, color = colorResource(id = R.color.white))
                         Spacer(modifier = Modifier.padding(top = 10.dp))
                         Image(
                             painter = painterResource(id = R.drawable.sun),
                             modifier = Modifier.size(30.dp),
                             contentDescription = ""
                         )
-                        Spacer(modifier = Modifier.padding(top = 10.dp))
+                        Spacer(modifier = Modifier.padding(top = 8.dp))
                         Text(
-                            text = item[it].temperature2m.toString() + "°",
+                            text = item.temperature2m.toString() + "°",
                             color = colorResource(id = R.color.white),
                             style = MaterialTheme.typography.headlineLarge,
                             fontSize = 18.sp
@@ -194,21 +199,46 @@ private fun calculateTempAccordingHour(hourly: WeatherResponseApi.Hourly?): List
     val currentDate = currentDateTime.toLocalDate()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
 
-    for (i in 0..hourly?.time?.size!!) {
+    for (i in 0..<hourly?.time?.size!!) {
 
         val dateTimeStr = hourly.time[i]
-
         val tempDateTime = LocalDateTime.parse(dateTimeStr, formatter)
         val tempDate = tempDateTime.toLocalDate()
+        val time = checkHour(hourly.time[i]!!)
 
         val day = when {
             tempDate.isEqual(currentDate) -> "Today"
-            tempDate.isEqual(currentDate.plusDays(1)) -> "tomorrow"
+            tempDate.isEqual(currentDate.plusDays(1)) -> "Tomorrow"
             else -> tempDate.toString()
         }
 
-        list.add(HourlyTemp(day = day, time = "", temperature2m = hourly.temperature2m?.get(i)!!))
+        if (time.isNotEmpty()){
+            list.add(HourlyTemp(day = day, time = time, temperature2m = hourly.temperature2m?.get(i)!!))
+        }
     }
     return list
 
+}
+
+fun checkHour(inputTime: String): String {
+    // Parse the input time
+    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
+    val date = inputFormat.parse(inputTime)
+
+    // Get the current system time
+    val currentCalendar = Calendar.getInstance()
+
+    // Set up a calendar for the input date
+    val inputCalendar = Calendar.getInstance()
+    inputCalendar.time = date
+
+    // Compare current time with input time
+    return if (currentCalendar.after(inputCalendar)) {
+        "" // Return empty if the current time is greater
+    } else {
+        // Format the input time to 12-hour clock with AM/PM
+        val hour = inputCalendar.get(Calendar.HOUR)
+        val isAM = inputCalendar.get(Calendar.AM_PM) == Calendar.AM
+        "${if (hour == 0) 12 else hour} ${if (isAM) "AM" else "PM"}"
+    }
 }
