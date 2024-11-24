@@ -2,6 +2,8 @@ package com.weather.weatherapp.presentation.screens
 
 import android.icu.text.SimpleDateFormat
 import android.os.Build
+import android.util.Log
+import android.widget.Space
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,16 +46,24 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
+import java.util.Vector
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, weatherResponseApi: WeatherResponseApi, locality : String, navigation: () -> Unit){
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    weatherResponseApi: WeatherResponseApi,
+    locality: String,
+    navigation: () -> Unit,
+) {
+
+    val dayNight = getDayOrNight()
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Color(0xFF304FFE), Color(0xFF1C1B75))))
-            .padding(top = 40.dp, start = 10.dp, end = 10.dp),
+            .padding(top = 60.dp, start = 10.dp, end = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -89,14 +99,14 @@ fun HomeScreen(modifier: Modifier = Modifier, weatherResponseApi: WeatherRespons
                 .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.sun),
+                painter = if (dayNight == "Day") painterResource(id = R.drawable.cloud_sun) else painterResource(id = R.drawable.moon),
                 contentDescription = "Sun",
                 modifier = modifier.size(90.dp),
                 contentScale = ContentScale.FillBounds
             )
             Spacer(modifier = modifier.padding(3.dp))
             Text(
-                text = weatherResponseApi.current?.temperature2m.toString() +  "°",
+                text = weatherResponseApi.current?.temperature2m.toString() + "°",
                 color = colorResource(id = R.color.white),
                 style = MaterialTheme.typography.headlineLarge,
                 fontSize = 90.sp
@@ -120,14 +130,14 @@ fun HomeScreen(modifier: Modifier = Modifier, weatherResponseApi: WeatherRespons
                 fontSize = 18.sp
             )
         }
-        WeeklyCard(weatherResponseApi.hourly)
+        WeeklyCard(weatherResponseApi.hourly, dayNight)
     }
 }
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
+private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, dayNight: String) {
     val item = calculateTempAccordingHour(hourly)
 
     val daySelection = remember {
@@ -140,7 +150,9 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                 onClick = {
                     daySelection.value = "Today"
                 }, colors = ButtonDefaults.buttonColors().copy(
-                    containerColor =  if (daySelection.value == "Today") colorResource(id = R.color.app_color) else colorResource(id = R.color.background_color),
+                    containerColor = if (daySelection.value == "Today") colorResource(id = R.color.app_color) else colorResource(
+                        id = R.color.background_color
+                    ),
                     contentColor = colorResource(id = R.color.white)
                 )
             ) {
@@ -153,7 +165,9 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                 onClick = {
                     daySelection.value = "Tomorrow"
                 }, colors = ButtonDefaults.buttonColors().copy(
-                    containerColor =  if (daySelection.value == "Tomorrow") colorResource(id = R.color.app_color) else colorResource(id = R.color.background_color),
+                    containerColor = if (daySelection.value == "Tomorrow") colorResource(id = R.color.app_color) else colorResource(
+                        id = R.color.background_color
+                    ),
                     contentColor = colorResource(id = R.color.white)
                 )
             ) {
@@ -161,19 +175,39 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
             }
         }
 
-        LazyRow {
+        Card(
+            colors = CardDefaults.cardColors().copy(
+                containerColor = colorResource(id = R.color.app_color)
+            ),
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 20.dp)
+                .fillMaxWidth()
+        ) {
 
-            items(item.filter{daySelection.value == it.day }) {item->
-                Card(
-                    colors = CardDefaults.cardColors().copy(
-                        containerColor = colorResource(id = R.color.app_color)
-                    ), modifier = Modifier.padding(start = 10.dp , top = 20.dp), shape = RoundedCornerShape(50.dp)
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.hour),
+                    contentDescription = "Hourly Forecast Image",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.padding(3.dp))
+                Text(text = "Hourly Forecast", color = colorResource(id = R.color.white))
+            }
+
+            Log.d("checkCurrentHour", Calendar.HOUR.toString())
+            LazyRow {
+                items(item.filter { daySelection.value == it.day }) { item ->
+                    Column(
+                        modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(text = item.time, color = colorResource(id = R.color.white))
                         Spacer(modifier = Modifier.padding(top = 10.dp))
                         Image(
-                            painter = painterResource(id = R.drawable.sun),
+                            painter = if (item.time.substring(0,item.time.length-3).toInt() in 5..18) painterResource(id = R.drawable.sun) else painterResource(id = R.drawable.moon),
                             modifier = Modifier.size(30.dp),
                             contentDescription = ""
                         )
@@ -212,12 +246,29 @@ private fun calculateTempAccordingHour(hourly: WeatherResponseApi.Hourly?): List
             else -> tempDate.toString()
         }
 
-        if (time.isNotEmpty()){
-            list.add(HourlyTemp(day = day, time = time, temperature2m = hourly.temperature2m?.get(i)!!))
+        if (time.isNotEmpty()) {
+            list.add(
+                HourlyTemp(
+                    day = day,
+                    time = time,
+                    temperature2m = hourly.temperature2m?.get(i)!!
+                )
+            )
         }
     }
     return list
 
+}
+
+fun getDayOrNight(): String {
+    val currentTime = Calendar.getInstance()
+    val hour = currentTime.get(Calendar.HOUR_OF_DAY)
+
+    return if (hour in 5..18) {
+        "Day"
+    } else {
+        "Night"
+    }
 }
 
 fun checkHour(inputTime: String): String {

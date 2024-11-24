@@ -1,0 +1,45 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="123dp"
+    android:height="123dp"
+    android:viewportWidth="123"
+    android:viewportHeight="123">
+  <path
+      android:pathData="M122.89,61.7C122.89,95.38 95.58,122.68 61.9,122.68C28.22,122.68 0.91,95.38 0.91,61.7C0.91,28.01 28.22,0.71 61.9,0.71C95.58,0.71 122.89,28.01 122.89,61.7Z">
+    <aapt:attr name="android:fillColor">
+      <gradient 
+          android:startX="20.23"
+          android:startY="22.08"
+          android:endX="129.8"
+          android:endY="69.88"
+          android:type="linear">
+        <item android:offset="0" android:color="#FFFFFFFF"/>
+        <item android:offset="1" android:color="#00FFFFFF"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <path
+      android:pathData="M61.9,121.98C95.19,121.98 122.18,94.99 122.18,61.7C122.18,28.41 95.19,1.42 61.9,1.42C28.61,1.42 1.62,28.41 1.62,61.7C1.62,94.99 28.61,121.98 61.9,121.98ZM61.9,122.68C95.58,122.68 122.89,95.38 122.89,61.7C122.89,28.01 95.58,0.71 61.9,0.71C28.22,0.71 0.91,28.01 0.91,61.7C0.91,95.38 28.22,122.68 61.9,122.68Z"
+      android:fillType="evenOdd">
+    <aapt:attr name="android:fillColor">
+      <gradient 
+          android:startX="-8.43"
+          android:startY="32.85"
+          android:endX="47.07"
+          android:endY="57.3"
+          android:type="linear">
+        <item android:offset="0" android:color="#FFFFFFFF"/>
+        <item android:offset="1" android:color="#00FFFFFF"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <group>
+    <clip-path
+        android:pathData="M122.89,61.7C122.89,95.38 95.58,122.68 61.9,122.68C28.22,122.68 0.91,95.38 0.91,61.7C0.91,28.01 28.22,0.71 61.9,0.71C95.58,0.71 122.89,28.01 122.89,61.7Z"/>
+  </group>
+  <group>
+    <clip-path
+        android:pathData="M61.9,121.98C95.19,121.98 122.18,94.99 122.18,61.7C122.18,28.41 95.19,1.42 61.9,1.42C28.61,1.42 1.62,28.41 1.62,61.7C1.62,94.99 28.61,121.98 61.9,121.98ZM61.9,122.68C95.58,122.68 122.89,95.38 122.89,61.7C122.89,28.01 95.58,0.71 61.9,0.71C28.22,0.71 0.91,28.01 0.91,61.7C0.91,95.38 28.22,122.68 61.9,122.68Z"
+        android:fillType="evenOdd"/>
+  </group>
+</vector>
