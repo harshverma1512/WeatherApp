@@ -7,5 +7,5 @@ enum class Screens {
 
 sealed class NavigationItem(val route: String) {
     data object Home : NavigationItem(Screens.HomeScreen.name)
-    data object Splash : NavigationItem(Screens.Splash.name)
+    data object SplashScreen : NavigationItem(Screens.Splash.name)
 }

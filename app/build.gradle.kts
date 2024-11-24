@@ -104,4 +104,8 @@ dependencies {
     implementation(libs.play.services.auth)
 
 
+    //ConstraintLayout
+    implementation (libs.androidx.constraintlayout.compose)
+
+
 }

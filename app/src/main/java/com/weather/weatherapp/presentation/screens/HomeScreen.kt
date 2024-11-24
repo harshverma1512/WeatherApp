@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,7 +57,6 @@ fun HomeScreen(
     locality: String,
     navigation: () -> Unit,
 ) {
-
     val dayNight = getDayOrNight()
 
     Column(
@@ -112,32 +112,44 @@ fun HomeScreen(
                 fontSize = 90.sp
             )
         }
-        Row(
-            modifier = modifier
-                .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
+
+        Card(
+            colors = CardDefaults.cardColors().copy(
+                containerColor = colorResource(id = R.color.app_color)
+            ),
+            modifier = Modifier
+                .padding(horizontal = 10.dp, vertical = 20.dp)
+                .wrapContentWidth()
         ) {
-            Text(
-                text = "Hum: 26°",
-                color = colorResource(id = R.color.white),
-                style = MaterialTheme.typography.headlineLarge,
-                fontSize = 18.sp
-            )
-            Spacer(modifier = modifier.padding(3.dp))
-            Text(
-                text = "Wind: ${weatherResponseApi.current?.windSpeed10m.toString()} km/h",
-                color = colorResource(id = R.color.white),
-                style = MaterialTheme.typography.headlineLarge,
-                fontSize = 18.sp
-            )
+            Row(
+                modifier = modifier.padding(8.dp)
+                    .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(painter = painterResource(id = R.drawable.humidity), contentDescription = "" , modifier = Modifier.padding(end = 3.dp).size(20.dp))
+                Text(
+                    text = "90%",
+                    color = colorResource(id = R.color.white),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontSize = 18.sp
+                )
+                Spacer(modifier = modifier.padding(3.dp))
+                Image(painter = painterResource(id = R.drawable.wind), contentDescription = "" , modifier = Modifier.padding(end = 3.dp).size(20.dp))
+                Text(
+                    text = " ${weatherResponseApi.current?.windSpeed10m.toString()} km/h",
+                    color = colorResource(id = R.color.white),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontSize = 18.sp
+                )
+            }
         }
-        WeeklyCard(weatherResponseApi.hourly, dayNight)
+        WeeklyCard(weatherResponseApi.hourly)
     }
 }
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, dayNight: String) {
+private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
     val item = calculateTempAccordingHour(hourly)
 
     val daySelection = remember {
@@ -196,8 +208,6 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, dayNight: String) {
                 Spacer(modifier = Modifier.padding(3.dp))
                 Text(text = "Hourly Forecast", color = colorResource(id = R.color.white))
             }
-
-            Log.d("checkCurrentHour", Calendar.HOUR.toString())
             LazyRow {
                 items(item.filter { daySelection.value == it.day }) { item ->
                     Column(
@@ -207,7 +217,7 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, dayNight: String) {
                         Text(text = item.time, color = colorResource(id = R.color.white))
                         Spacer(modifier = Modifier.padding(top = 10.dp))
                         Image(
-                            painter = if (item.time.substring(0,item.time.length-3).toInt() in 5..18) painterResource(id = R.drawable.sun) else painterResource(id = R.drawable.moon),
+                            painter = if (getTimeOfDay(item.time) == "Morning") painterResource(id = R.drawable.sun) else painterResource(id = R.drawable.moon),
                             modifier = Modifier.size(30.dp),
                             contentDescription = ""
                         )
@@ -251,7 +261,8 @@ private fun calculateTempAccordingHour(hourly: WeatherResponseApi.Hourly?): List
                 HourlyTemp(
                     day = day,
                     time = time,
-                    temperature2m = hourly.temperature2m?.get(i)!!
+                    temperature2m = hourly.temperature2m?.get(i)!!,
+                    humidity = hourly.relativeHumidity2m?.get(i)!!
                 )
             )
         }
@@ -275,8 +286,6 @@ fun checkHour(inputTime: String): String {
     // Parse the input time
     val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
     val date = inputFormat.parse(inputTime)
-
-    // Get the current system time
     val currentCalendar = Calendar.getInstance()
 
     // Set up a calendar for the input date
@@ -291,5 +300,24 @@ fun checkHour(inputTime: String): String {
         val hour = inputCalendar.get(Calendar.HOUR)
         val isAM = inputCalendar.get(Calendar.AM_PM) == Calendar.AM
         "${if (hour == 0) 12 else hour} ${if (isAM) "AM" else "PM"}"
+    }
+}
+
+fun getTimeOfDay(time: String): String {
+    return when {
+        time.contains("AM", ignoreCase = true) -> {
+            val hour = time.substringBefore("AM").trim().toIntOrNull()
+            if (hour == 12 || hour in 1..4) "Night"
+            else if (hour in 5..11) "Morning"
+            else "Invalid time"
+        }
+        time.contains("PM", ignoreCase = true) -> {
+            val hour = time.substringBefore("PM").trim().toIntOrNull()
+            if (hour == 12) "Morning"
+            else if (hour in 1..5) "Morning"
+            else if (hour in 6..11) "Night"
+            else "Invalid time"
+        }
+        else -> "Invalid time format"
     }
 }
