@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,8 +43,13 @@ import com.weather.weatherapp.presentation.screens.HomeScreen
 import com.weather.weatherapp.presentation.screens.NavigationItem
 import com.weather.weatherapp.presentation.screens.Screens
 import com.weather.weatherapp.presentation.screens.SplashScreen
+import com.weather.weatherapp.presentation.theme.WeatherAppTheme
 import com.weather.weatherapp.presentation.viewModel.WeatherViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -53,27 +59,26 @@ class MainActivity : ComponentActivity() {
     private var locality: String? = null
     private lateinit var navController: NavHostController
     private val isLoading = mutableStateOf(true)
-    private val locationState = mutableStateOf<Location?>(null)
+    private var locationState: Location? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         setContent {
+            getCurrentLocation { location ->
+                locationState = location
+                isLoading.value = false
+            }
             NavController()
             if (isLoading.value) {
                 SplashScreen() // Show splash screen while loading
             } else {
-                locationState.value?.let {
+                locationState?.let {
                     FetchApiData(it) // Call FetchApiData with valid location
                 } ?: run {
                     DialogPop() // Show an error dialog if location is not fetched
                 }
             }
-        }
-        getCurrentLocation { location ->
-            locationState.value = location
-            isLoading.value = false
         }
     }
 
@@ -146,13 +151,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun FetchApiData(location: Location) {
         val viewModel: WeatherViewModel = hiltViewModel()
-        val weatherState by viewModel.weatherState.collectAsState()
+        val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
 
-        LaunchedEffect(location) {
-            viewModel.getWeatherResponse(
-                locationState.value?.latitude!!, locationState.value?.longitude!!
-            )
-        }
+        LaunchedEffect(Unit) { viewModel.getWeatherResponse(location.latitude, location.longitude) }
 
         when (weatherState) {
             is WeatherState.Error -> {
@@ -177,13 +178,15 @@ class MainActivity : ComponentActivity() {
         NavHost(
             navController = navController, startDestination = NavigationItem.SplashScreen.route
         ) {
-            if (!isLoading.value) {
-                composable(NavigationItem.Home.route) {
-                    HomeScreen(weatherResponseApi = response!!,
-                        locality = locality!!,
-                        navigation = {
-                            navController.navigate(NavigationItem.SplashScreen.route)
-                        })
+            composable(NavigationItem.Home.route) {
+                locality?.let { locality ->
+                    response?.let { response ->
+                        HomeScreen(weatherResponseApi = response,
+                            locality = locality,
+                            navigation = { route ->
+                                navController.navigate(route)
+                            })
+                    }
                 }
             }
             composable(NavigationItem.SplashScreen.route) {

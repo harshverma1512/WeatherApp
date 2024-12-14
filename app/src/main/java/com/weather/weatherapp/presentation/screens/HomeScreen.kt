@@ -1,51 +1,68 @@
 package com.weather.weatherapp.presentation.screens
 
 import android.icu.text.SimpleDateFormat
+import android.media.Image
 import android.os.Build
 import android.util.Log
 import android.widget.Space
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.MapUiSettings
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
+import java.util.ConcurrentModificationException
 import java.util.Locale
 import java.util.Vector
 
@@ -55,21 +72,26 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     weatherResponseApi: WeatherResponseApi,
     locality: String,
-    navigation: () -> Unit,
+    navigation: (String) -> Unit,
 ) {
     val dayNight = getDayOrNight()
-
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .background(Brush.verticalGradient(listOf(Color(0xFF304FFE), Color(0xFF1C1B75))))
-            .padding(top = 60.dp, start = 10.dp, end = 10.dp),
+            .padding(top = 20.dp, start = 10.dp, end = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        OpenSearch{
+          //  navigation.invoke(NavigationItem.Search.route)
+        }
+
         Text(
             text = locality,
             color = colorResource(id = R.color.white),
-            modifier = modifier,
+            modifier = modifier.padding(top = 40.dp),
             style = MaterialTheme.typography.headlineLarge
         )
         Row(
@@ -122,10 +144,13 @@ fun HomeScreen(
                 .wrapContentWidth()
         ) {
             Row(
-                modifier = modifier.padding(8.dp)
+                modifier = modifier
+                    .padding(8.dp)
                     .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(painter = painterResource(id = R.drawable.humidity), contentDescription = "" , modifier = Modifier.padding(end = 3.dp).size(20.dp))
+                Image(painter = painterResource(id = R.drawable.humidity), contentDescription = "" , modifier = Modifier
+                    .padding(end = 3.dp)
+                    .size(20.dp))
                 Text(
                     text = "90%",
                     color = colorResource(id = R.color.white),
@@ -133,7 +158,9 @@ fun HomeScreen(
                     fontSize = 18.sp
                 )
                 Spacer(modifier = modifier.padding(3.dp))
-                Image(painter = painterResource(id = R.drawable.wind), contentDescription = "" , modifier = Modifier.padding(end = 3.dp).size(20.dp))
+                Image(painter = painterResource(id = R.drawable.wind), contentDescription = "" , modifier = Modifier
+                    .padding(end = 3.dp)
+                    .size(20.dp))
                 Text(
                     text = " ${weatherResponseApi.current?.windSpeed10m.toString()} km/h",
                     color = colorResource(id = R.color.white),
@@ -146,6 +173,31 @@ fun HomeScreen(
     }
 }
 
+@Composable
+private fun  OpenSearch(modifier: Modifier = Modifier, navigation: () -> Unit) {
+    Card(
+        onClick = {
+            navigation.invoke()
+        },
+        elevation = CardDefaults.elevatedCardElevation(10.dp),
+        colors = CardDefaults.cardColors(colorResource(id = R.color.app_color)),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = modifier
+                .padding(10.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                imageVector = ImageVector.vectorResource(id = R.drawable.flight),
+                contentDescription = "Search Module"
+            )
+            Spacer(modifier = modifier.size(10.dp))
+            Text(text = "Want to check other location", color = Color.White )
+        }
+    }
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

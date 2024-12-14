@@ -107,5 +107,8 @@ dependencies {
     //ConstraintLayout
     implementation (libs.androidx.constraintlayout.compose)
 
+    //Map
+    implementation(libs.maps.compose)
+
 
 }
