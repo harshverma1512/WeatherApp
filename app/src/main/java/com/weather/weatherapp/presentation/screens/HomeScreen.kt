@@ -31,10 +31,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,10 +64,9 @@ import com.weather.weatherapp.data.dto.WeatherResponseApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.ConcurrentModificationException
 import java.util.Locale
-import java.util.Vector
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
@@ -75,6 +76,8 @@ fun HomeScreen(
     navigation: (String) -> Unit,
 ) {
     val dayNight = getDayOrNight()
+    val sheetState = rememberModalBottomSheetState()
+    var showBottomSheet by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -85,7 +88,10 @@ fun HomeScreen(
     ) {
 
         OpenSearch{
-          //  navigation.invoke(NavigationItem.Search.route)
+             navigation.invoke(NavigationItem.Search.route)
+            ModalBottomSheet(onDismissRequest = { showBottomSheet = false }, sheetState =  sheetState) {
+                
+            }
         }
 
         Text(
@@ -174,10 +180,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun  OpenSearch(modifier: Modifier = Modifier, navigation: () -> Unit) {
+private fun  OpenSearch(modifier: Modifier = Modifier, navigation: @Composable () -> Unit) {
     Card(
         onClick = {
-            navigation.invoke()
+            navigation
         },
         elevation = CardDefaults.elevatedCardElevation(10.dp),
         colors = CardDefaults.cardColors(colorResource(id = R.color.app_color)),
@@ -353,6 +359,17 @@ fun checkHour(inputTime: String): String {
         val isAM = inputCalendar.get(Calendar.AM_PM) == Calendar.AM
         "${if (hour == 0) 12 else hour} ${if (isAM) "AM" else "PM"}"
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PartialBottomSheet(modifier: Modifier = Modifier) {
+    val bottomSheetHeight = 200.dp
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false,
+    )
 }
 
 fun getTimeOfDay(time: String): String {

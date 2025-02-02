@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation (libs.androidx.material)
     implementation(libs.androidx.material3)
     implementation(libs.play.services.location)
     testImplementation(libs.junit)
@@ -96,6 +97,11 @@ dependencies {
     kapt(libs.hilt.android.compiler)
     implementation (libs.androidx.hilt.navigation.compose)
 
+    //navigation
+    implementation(libs.androidx.navigation.compose)
+
+    //splash
+    implementation(libs.androidx.core.splashscreen)
 
     //Timber for logs
     implementation (libs.timber) // Check for the latest version
