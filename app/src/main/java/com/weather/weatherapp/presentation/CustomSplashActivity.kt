@@ -34,12 +34,14 @@ class CustomSplashActivity : ComponentActivity() {
                 SplashScreen()
                 if (Utils.getInstance(this).isOnline(this)) {
                     Utils.getInstance(this).getCurrentLocation { location, locality ->
-                        this.locality = locality ?: ""
-                        locationState = location
-                        startActivity(Intent(this, MainActivity::class.java).apply {
-                            putExtra("locality", locality)
-                            putExtra("locationState", location)
-                        })
+                        if (locality != null && location != null){
+                            locationState = location
+                            this.locality = locality
+                            startActivity(Intent(this, MainActivity::class.java).apply {
+                                putExtra("locality", locality)
+                                putExtra("locationState", location)
+                            })
+                        }
                     }
                 } else {
                     Utils.getInstance(this).DialogPop {

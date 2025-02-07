@@ -3,6 +3,7 @@ package com.weather.weatherapp.presentation
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -45,6 +46,7 @@ import com.weather.weatherapp.presentation.screens.SplashScreen
 import com.weather.weatherapp.presentation.viewModel.WeatherViewModel
 import com.weather.weatherapp.utility.Utils
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -78,8 +80,6 @@ class MainActivity : ComponentActivity() {
         }
 
 
-
-
     @Composable
     fun FetchApiData(location: Location) {
         val viewModel: WeatherViewModel = hiltViewModel()
@@ -89,15 +89,15 @@ class MainActivity : ComponentActivity() {
 
         when (weatherState) {
             is WeatherState.Error -> {
-                Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
+                Timber.e("MainActivity", "Error: ${(weatherState as WeatherState.Error).message}")
             }
 
             WeatherState.Loading -> {
-                Toast.makeText(this, "Loading", Toast.LENGTH_SHORT).show()
+                Timber.tag("MainActivity").d("Loading")
             }
 
             is WeatherState.Success -> {
-                Toast.makeText(this, "Success", Toast.LENGTH_SHORT).show()
+                Timber.d("MainActivity", "Success: ${(weatherState as WeatherState.Success).data}")
                 response = (weatherState as WeatherState.Success).data
                 navController?.navigate(NavigationItem.Home.route)
             }

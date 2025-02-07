@@ -89,9 +89,6 @@ fun HomeScreen(
 
         OpenSearch{
              navigation.invoke(NavigationItem.Search.route)
-            ModalBottomSheet(onDismissRequest = { showBottomSheet = false }, sheetState =  sheetState) {
-                
-            }
         }
 
         Text(
