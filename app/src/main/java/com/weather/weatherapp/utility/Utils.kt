@@ -2,13 +2,19 @@ package com.weather.weatherapp.utility
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.icu.text.SimpleDateFormat
 import android.location.Geocoder
 import android.location.Location
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -19,46 +25,19 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.weather.weatherapp.data.dto.HourlyTemp
+import com.weather.weatherapp.data.dto.WeatherResponseApi
+import com.weather.weatherapp.presentation.MainActivity
 import timber.log.Timber
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Locale
 
 class Utils(private val context: Context) {
 
-    private val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
-
-    private var locality: String? = null
-
-    fun getCurrentLocation(onResult: (Location?, locality: String?) -> Unit) {
-        if (ActivityCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Request the current location
-            fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY, null // CancellationToken (optional)
-            ).addOnSuccessListener { currentLocation ->
-                if (currentLocation != null) {
-                    locality = getAreaName(currentLocation.latitude, currentLocation.longitude)
-                    onResult(currentLocation, locality)
-                } else {
-                    onResult(null, null)
-                    Toast.makeText(context, "Unable to fetch current location", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }.addOnFailureListener {
-                onResult(null, null)
-                Toast.makeText(context, "Failed to fetch location", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(context, "Location permissions are not granted", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     @Composable
-    fun DialogPop(finish : () -> Unit  ) {
+    fun DialogPop(finish: () -> Unit) {
         val openDialog = remember {
             mutableStateOf(true)
         }
@@ -99,15 +78,74 @@ class Utils(private val context: Context) {
         return false
     }
 
-    private fun getAreaName(latitude: Double, longitude: Double): String? {
-        return try {
-            val geocoder = Geocoder(context, Locale.getDefault())
-            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-            if (addresses?.isNotEmpty() == true) addresses[0].locality ?: addresses[0].subAdminArea else null
-        } catch (e: Exception) {
-            null
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun calculateTempAccordingHour(hourly: WeatherResponseApi.Hourly?): List<HourlyTemp> {
+        val list = mutableListOf<HourlyTemp>()
+        val currentDateTime = LocalDateTime.now()
+        val currentDate = currentDateTime.toLocalDate()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+
+        for (i in 0..<hourly?.time?.size!!) {
+
+            val dateTimeStr = hourly.time[i]
+            val tempDateTime = LocalDateTime.parse(dateTimeStr, formatter)
+            val tempDate = tempDateTime.toLocalDate()
+            val time = checkHour(hourly.time[i]!!)
+
+            val day = when {
+                tempDate.isEqual(currentDate) -> "Today"
+                tempDate.isEqual(currentDate.plusDays(1)) -> "Tomorrow"
+                else -> tempDate.toString()
+            }
+
+            if (time.isNotEmpty()) {
+                list.add(
+                    HourlyTemp(
+                        day = day,
+                        time = time,
+                        temperature2m = hourly.temperature2m?.get(i)!!,
+                        humidity = hourly.relativeHumidity2m?.get(i)!!
+                    )
+                )
+            }
+        }
+        return list
+
+    }
+
+    fun getDayOrNight(): String {
+        val currentTime = Calendar.getInstance()
+        val hour = currentTime.get(Calendar.HOUR_OF_DAY)
+
+        return if (hour in 5..18) {
+            "Day"
+        } else {
+            "Night"
         }
     }
+
+
+    private fun checkHour(inputTime: String): String {
+        // Parse the input time
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
+        val date = inputFormat.parse(inputTime)
+        val currentCalendar = Calendar.getInstance()
+
+        // Set up a calendar for the input date
+        val inputCalendar = Calendar.getInstance()
+        inputCalendar.time = date
+
+        // Compare current time with input time
+        return if (currentCalendar.after(inputCalendar)) {
+            "" // Return empty if the current time is greater
+        } else {
+            // Format the input time to 12-hour clock with AM/PM
+            val hour = inputCalendar.get(Calendar.HOUR)
+            val isAM = inputCalendar.get(Calendar.AM_PM) == Calendar.AM
+            "${if (hour == 0) 12 else hour} ${if (isAM) "AM" else "PM"}"
+        }
+    }
+
 
     companion object {
         @SuppressLint("StaticFieldLeak")

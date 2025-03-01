@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -27,6 +28,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -48,9 +52,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +67,8 @@ import com.google.maps.android.compose.MapUiSettings
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
+import com.weather.weatherapp.presentation.ui.theme.backgroundView
+import com.weather.weatherapp.utility.Utils
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -75,85 +83,127 @@ fun HomeScreen(
     locality: String,
     navigation: (String) -> Unit,
 ) {
-    val dayNight = getDayOrNight()
+    val dayNight = Utils.getInstance(LocalContext.current).getDayOrNight()
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(Brush.verticalGradient(listOf(Color(0xFF304FFE), Color(0xFF1C1B75))))
-            .padding(top = 20.dp, start = 10.dp, end = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(color = backgroundView), horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        OpenSearch{
-             navigation.invoke(NavigationItem.Search.route)
-        }
-
-        Text(
-            text = locality,
-            color = colorResource(id = R.color.white),
-            modifier = modifier.padding(top = 40.dp),
-            style = MaterialTheme.typography.headlineLarge
-        )
-        Row(
+        Box(
             modifier = modifier
-                .padding(top = 10.dp)
-                .wrapContentSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .wrapContentHeight()
         ) {
             Image(
-                painter = painterResource(id = R.drawable.currentlocation),
-                contentDescription = "current location icon",
-                modifier = modifier.size(24.dp)
+                painter = painterResource(id = R.drawable.background), // Replace with actual image
+                contentDescription = "Weather Background",
+                modifier = modifier.fillMaxWidth(),
+                contentScale = ContentScale.Crop
             )
-            Spacer(modifier = modifier.padding(3.dp))
-            Text(
-                text = "Current Location",
-                color = colorResource(id = R.color.white),
-                modifier = modifier,
-                fontSize = 12.sp
-            )
-        }
 
-        Row(
-            modifier = modifier
-                .padding(20.dp)
-                .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = if (dayNight == "Day") painterResource(id = R.drawable.cloud_sun) else painterResource(id = R.drawable.moon),
-                contentDescription = "Sun",
-                modifier = modifier.size(90.dp),
-                contentScale = ContentScale.FillBounds
-            )
-            Spacer(modifier = modifier.padding(3.dp))
-            Text(
-                text = weatherResponseApi.current?.temperature2m.toString() + "°",
-                color = colorResource(id = R.color.white),
-                style = MaterialTheme.typography.headlineLarge,
-                fontSize = 90.sp
-            )
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = modifier.height(20.dp))
+                Row(
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = locality,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Cloud Icon",
+                        tint = Color.White,
+                        modifier = modifier.size(24.dp)
+                    )
+                }
+
+                Row(
+                    modifier
+                        .padding(top = 60.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = weatherResponseApi.current?.temperature2m.toString() + "°",
+                        fontSize = 80.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+
+                    Image(
+                        painter = if (dayNight == "Day") painterResource(id = R.drawable.cloud_sun) else painterResource(
+                            id = R.drawable.moon
+                        ),
+                        contentDescription = "Sun",
+                        modifier = modifier.size(90.dp),
+                        contentScale = ContentScale.FillBounds
+                    )
+                }
+
+                Text(
+                    text = "January 18, 16:14",
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    modifier = modifier
+                        .padding(top = 150.dp)
+                        .align(Alignment.Start)
+                )
+            }
         }
+        WeeklyCard(weatherResponseApi.hourly)
+        WeatherInfoStatus(modifier, weatherResponseApi)
+    }
+}
+
+@Composable
+private fun WeatherInfoStatus(
+    modifier: Modifier = Modifier,
+    weatherResponseApi: WeatherResponseApi,
+) {
+    Row(
+        modifier = modifier
+            .padding(20.dp)
+            .wrapContentSize(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Spacer(modifier = modifier.padding(3.dp))
 
         Card(
             colors = CardDefaults.cardColors().copy(
                 containerColor = colorResource(id = R.color.app_color)
-            ),
-            modifier = Modifier
+            ), modifier = Modifier
                 .padding(horizontal = 10.dp, vertical = 20.dp)
                 .wrapContentWidth()
         ) {
             Row(
                 modifier = modifier
                     .padding(8.dp)
-                    .wrapContentSize(), verticalAlignment = Alignment.CenterVertically
+                    .wrapContentSize(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(painter = painterResource(id = R.drawable.humidity), contentDescription = "" , modifier = Modifier
-                    .padding(end = 3.dp)
-                    .size(20.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.humidity),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .padding(end = 3.dp)
+                        .size(20.dp)
+                )
                 Text(
                     text = "90%",
                     color = colorResource(id = R.color.white),
@@ -161,9 +211,13 @@ fun HomeScreen(
                     fontSize = 18.sp
                 )
                 Spacer(modifier = modifier.padding(3.dp))
-                Image(painter = painterResource(id = R.drawable.wind), contentDescription = "" , modifier = Modifier
-                    .padding(end = 3.dp)
-                    .size(20.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.wind),
+                    contentDescription = "",
+                    modifier = Modifier
+                        .padding(end = 3.dp)
+                        .size(20.dp)
+                )
                 Text(
                     text = " ${weatherResponseApi.current?.windSpeed10m.toString()} km/h",
                     color = colorResource(id = R.color.white),
@@ -172,12 +226,11 @@ fun HomeScreen(
                 )
             }
         }
-        WeeklyCard(weatherResponseApi.hourly)
     }
 }
 
 @Composable
-private fun  OpenSearch(modifier: Modifier = Modifier, navigation: @Composable () -> Unit) {
+private fun OpenSearch(modifier: Modifier = Modifier, navigation: @Composable () -> Unit) {
     Card(
         onClick = {
             navigation
@@ -190,14 +243,15 @@ private fun  OpenSearch(modifier: Modifier = Modifier, navigation: @Composable (
             modifier = modifier
                 .padding(10.dp)
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 imageVector = ImageVector.vectorResource(id = R.drawable.flight),
                 contentDescription = "Search Module"
             )
             Spacer(modifier = modifier.size(10.dp))
-            Text(text = "Want to check other location", color = Color.White )
+            Text(text = "Want to check other location", color = Color.White)
         }
     }
 }
@@ -205,48 +259,61 @@ private fun  OpenSearch(modifier: Modifier = Modifier, navigation: @Composable (
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
-    val item = calculateTempAccordingHour(hourly)
+    val item = Utils.getInstance(context = LocalContext.current).calculateTempAccordingHour(hourly)
 
     val daySelection = remember {
         mutableStateOf("Today")
     }
     Column {
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
             Button(
                 onClick = {
                     daySelection.value = "Today"
                 }, colors = ButtonDefaults.buttonColors().copy(
                     containerColor = if (daySelection.value == "Today") colorResource(id = R.color.app_color) else colorResource(
-                        id = R.color.background_color
-                    ),
-                    contentColor = colorResource(id = R.color.white)
+                        id = R.color.white
+                    ), contentColor = colorResource(id = R.color.black)
                 )
             ) {
                 Text(text = "Today")
             }
-
-            Spacer(modifier = Modifier.padding(10.dp))
 
             Button(
                 onClick = {
                     daySelection.value = "Tomorrow"
                 }, colors = ButtonDefaults.buttonColors().copy(
                     containerColor = if (daySelection.value == "Tomorrow") colorResource(id = R.color.app_color) else colorResource(
-                        id = R.color.background_color
-                    ),
-                    contentColor = colorResource(id = R.color.white)
+                        id = R.color.white
+                    ), contentColor = colorResource(id = R.color.black)
                 )
             ) {
                 Text(text = "Tomorrow")
             }
+
+            Button(
+                onClick = {
+                    daySelection.value = "7 days"
+                }, colors = ButtonDefaults.buttonColors().copy(
+                    containerColor = if (daySelection.value == "7 days") colorResource(id = R.color.app_color) else colorResource(
+                        id = R.color.white
+                    ), contentColor = colorResource(id = R.color.black)
+                )
+            ) {
+                Text(text = "7 days")
+            }
+
         }
 
         Card(
             colors = CardDefaults.cardColors().copy(
                 containerColor = colorResource(id = R.color.app_color)
-            ),
-            modifier = Modifier
+            ), modifier = Modifier
                 .padding(horizontal = 10.dp, vertical = 20.dp)
                 .fillMaxWidth()
         ) {
@@ -272,9 +339,9 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                         Text(text = item.time, color = colorResource(id = R.color.white))
                         Spacer(modifier = Modifier.padding(top = 10.dp))
                         Image(
-                            painter = if (getTimeOfDay(item.time) == "Morning") painterResource(id = R.drawable.sun) else painterResource(id = R.drawable.moon),
-                            modifier = Modifier.size(30.dp),
-                            contentDescription = ""
+                            painter = if (getTimeOfDay(item.time) == "Morning") painterResource(id = R.drawable.sun) else painterResource(
+                                id = R.drawable.moon
+                            ), modifier = Modifier.size(30.dp), contentDescription = ""
                         )
                         Spacer(modifier = Modifier.padding(top = 8.dp))
                         Text(
@@ -287,74 +354,6 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                 }
             }
         }
-    }
-}
-
-
-@RequiresApi(Build.VERSION_CODES.O)
-private fun calculateTempAccordingHour(hourly: WeatherResponseApi.Hourly?): List<HourlyTemp> {
-    val list = mutableListOf<HourlyTemp>()
-    val currentDateTime = LocalDateTime.now()
-    val currentDate = currentDateTime.toLocalDate()
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
-
-    for (i in 0..<hourly?.time?.size!!) {
-
-        val dateTimeStr = hourly.time[i]
-        val tempDateTime = LocalDateTime.parse(dateTimeStr, formatter)
-        val tempDate = tempDateTime.toLocalDate()
-        val time = checkHour(hourly.time[i]!!)
-
-        val day = when {
-            tempDate.isEqual(currentDate) -> "Today"
-            tempDate.isEqual(currentDate.plusDays(1)) -> "Tomorrow"
-            else -> tempDate.toString()
-        }
-
-        if (time.isNotEmpty()) {
-            list.add(
-                HourlyTemp(
-                    day = day,
-                    time = time,
-                    temperature2m = hourly.temperature2m?.get(i)!!,
-                    humidity = hourly.relativeHumidity2m?.get(i)!!
-                )
-            )
-        }
-    }
-    return list
-
-}
-
-fun getDayOrNight(): String {
-    val currentTime = Calendar.getInstance()
-    val hour = currentTime.get(Calendar.HOUR_OF_DAY)
-
-    return if (hour in 5..18) {
-        "Day"
-    } else {
-        "Night"
-    }
-}
-
-fun checkHour(inputTime: String): String {
-    // Parse the input time
-    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault())
-    val date = inputFormat.parse(inputTime)
-    val currentCalendar = Calendar.getInstance()
-
-    // Set up a calendar for the input date
-    val inputCalendar = Calendar.getInstance()
-    inputCalendar.time = date
-
-    // Compare current time with input time
-    return if (currentCalendar.after(inputCalendar)) {
-        "" // Return empty if the current time is greater
-    } else {
-        // Format the input time to 12-hour clock with AM/PM
-        val hour = inputCalendar.get(Calendar.HOUR)
-        val isAM = inputCalendar.get(Calendar.AM_PM) == Calendar.AM
-        "${if (hour == 0) 12 else hour} ${if (isAM) "AM" else "PM"}"
     }
 }
 
@@ -377,6 +376,7 @@ fun getTimeOfDay(time: String): String {
             else if (hour in 5..11) "Morning"
             else "Invalid time"
         }
+
         time.contains("PM", ignoreCase = true) -> {
             val hour = time.substringBefore("PM").trim().toIntOrNull()
             if (hour == 12) "Morning"
@@ -384,6 +384,7 @@ fun getTimeOfDay(time: String): String {
             else if (hour in 6..11) "Night"
             else "Invalid time"
         }
+
         else -> "Invalid time format"
     }
 }

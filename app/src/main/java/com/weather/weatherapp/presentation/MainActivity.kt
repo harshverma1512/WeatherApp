@@ -58,26 +58,30 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
-        if (intent?.extras != null){
-           locality = intent.getStringExtra("locality")
-           locationState = intent.getParcelableExtra("locationState")
-       }
+        if (intent?.extras != null) {
+            locality = intent.getStringExtra("locality")
+            locationState = intent.getParcelableExtra("locationState")
+        }
         setContent {
-                locationState?.let {
-                    FetchApiData(it) // Call FetchApiData with valid location
-                    Scaffold(bottomBar = { navController?.let {
-                        BottomNavigationBar(navigationController = it) } }) { innerPadding ->
-                        NavController(modifier = Modifier.padding(innerPadding))
+            locationState?.let {
+                FetchApiData(it) // Call FetchApiData with valid location
+                Scaffold(bottomBar = {
+                    navController?.let {
+                        BottomNavigationBar(navigationController = it)
                     }
-
-                } ?: run {
-                    Utils.getInstance(this).DialogPop {
-                        finish()
-                    } // Show an error dialog if location is not fetched
+                }) { innerPadding ->
+                    NavController(modifier = Modifier.padding(innerPadding))
                 }
+
+            } ?: run {
+                Utils.getInstance(this).DialogPop {
+                    finish()
+                } // Show an error dialog if location is not fetched
             }
         }
+    }
 
 
     @Composable
