@@ -29,6 +29,7 @@ import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.presentation.MainActivity
 import timber.log.Timber
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -56,6 +57,37 @@ class Utils(private val context: Context) {
                 text = { Text(text = "Please check whether your internet connection or GPS is enabled.") })
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getFormattedDate(): String {
+        val currentDate = LocalDate.now()
+        val formatter = DateTimeFormatter.ofPattern("dd MMMM, yyyy", Locale.ENGLISH)
+        return currentDate.format(formatter)
+    }
+
+
+
+    fun getTimeOfDay(time: String): String {
+        return when {
+            time.contains("AM", ignoreCase = true) -> {
+                val hour = time.substringBefore("AM").trim().toIntOrNull()
+                if (hour == 12 || hour in 1..4) "Night"
+                else if (hour in 5..11) "Morning"
+                else "Invalid time"
+            }
+
+            time.contains("PM", ignoreCase = true) -> {
+                val hour = time.substringBefore("PM").trim().toIntOrNull()
+                if (hour == 12) "Morning"
+                else if (hour in 1..5) "Morning"
+                else if (hour in 6..11) "Night"
+                else "Invalid time"
+            }
+
+            else -> "Invalid time format"
+        }
+    }
+
 
 
     fun isOnline(context: Context): Boolean {
@@ -104,7 +136,9 @@ class Utils(private val context: Context) {
                         day = day,
                         time = time,
                         temperature2m = hourly.temperature2m?.get(i)!!,
-                        humidity = hourly.relativeHumidity2m?.get(i)!!
+                        humidity = hourly.relativeHumidity2m?.get(i)!!,
+                        windSpeed10m = hourly.windSpeed10m?.get(i)!!,
+                        uvIndex = hourly.uvIndex?.get(i)!!
                     )
                 )
             }

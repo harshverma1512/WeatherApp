@@ -12,7 +12,7 @@ class WeatherRepository @Inject constructor(private val apiInterface: ApiInterfa
     suspend fun getWeatherResponse(latitude: Double, longitude: Double): Flow<WeatherState> {
         return flow {
             try {
-                val response = apiInterface.getWeatherForecast(latitude, longitude,"temperature_2m,wind_speed_10m","temperature_2m,relative_humidity_2m,wind_speed_10m")
+                val response = apiInterface.getWeatherForecast(latitude, longitude,"temperature_2m,wind_speed_10m","temperature_2m,relative_humidity_2m,wind_speed_10m,uv_index","rain_sum")
                 if (response.isSuccessful && response.body() != null) {
                     emit(WeatherState.Success(response.body()!!))
                 } else {

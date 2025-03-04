@@ -116,5 +116,9 @@ dependencies {
     //Map
     implementation(libs.maps.compose)
 
+    //System Bar Color  Change
+    implementation (libs.accompanist.systemuicontroller)
+
+
 
 }

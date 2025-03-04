@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.weather.weatherapp.presentation.screens.SplashScreen
@@ -26,7 +27,6 @@ class CustomSplashActivity : ComponentActivity() {
 
     private var locality: String? = null
     private var locationState: Location? = null
-
 
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
@@ -43,7 +43,6 @@ class CustomSplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        installSplashScreen()
         setContent {
             WeatherAppTheme {
                 SplashScreen()
@@ -67,7 +66,6 @@ class CustomSplashActivity : ComponentActivity() {
     }
 
 
-
     private fun requestLocationPermission() {
         locationPermissionLauncher.launch(
             arrayOf(
@@ -75,39 +73,57 @@ class CustomSplashActivity : ComponentActivity() {
             )
         )
     }
-
     @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         if (!hasLocationPermission()) {
             requestLocationPermission()
             return
         }
+
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        // Try to get last known location first
+        fusedLocationClient.lastLocation.addOnSuccessListener { lastLocation ->
+            if (lastLocation != null) {
+                updateLocation(lastLocation)
+            } else {
+                // If no last known location, fall back to getCurrentLocation()
+                fetchFreshLocation(fusedLocationClient)
+            }
+        }.addOnFailureListener {
+            fetchFreshLocation(fusedLocationClient) // Ensure fresh location is attempted
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun fetchFreshLocation(fusedLocationClient: FusedLocationProviderClient) {
         fusedLocationClient.getCurrentLocation(
             Priority.PRIORITY_HIGH_ACCURACY, null
         ).addOnSuccessListener { currentLocation ->
             if (currentLocation != null) {
-                locality = getAreaName(currentLocation.latitude, currentLocation.longitude)
-                locationState = currentLocation
-
-                startActivity(Intent(this, MainActivity::class.java).apply {
-                    putExtra("locality", locality)
-                    putExtra("locationState", locationState)
-                })
+                updateLocation(currentLocation)
             } else {
                 Toast.makeText(this, "Unable to fetch location", Toast.LENGTH_SHORT).show()
             }
         }.addOnFailureListener {
             Toast.makeText(this, "Failed to fetch location", Toast.LENGTH_SHORT).show()
         }
+    }
 
+    private fun updateLocation(location: Location) {
+        locality = getAreaName(location.latitude, location.longitude)
+        locationState = location
+
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            putExtra("locality", locality)
+            putExtra("locationState", locationState)
+        })
     }
 
     private fun getAreaName(latitude: Double, longitude: Double): String {
         val geocoder = Geocoder(this, Locale.getDefault())
         val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-        return addresses?.firstOrNull()?.locality ?: "Unknown"
+        return (addresses?.firstOrNull()?.subLocality + ", " + addresses?.firstOrNull()?.locality)
     }
 }
 

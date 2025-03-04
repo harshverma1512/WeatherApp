@@ -4,8 +4,10 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.EdgeEffect
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
@@ -18,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +46,7 @@ import com.weather.weatherapp.presentation.screens.HomeScreen
 import com.weather.weatherapp.presentation.screens.NavigationItem
 import com.weather.weatherapp.presentation.screens.SearchScreen
 import com.weather.weatherapp.presentation.screens.SplashScreen
+import com.weather.weatherapp.presentation.ui.theme.Purple40
 import com.weather.weatherapp.presentation.viewModel.WeatherViewModel
 import com.weather.weatherapp.utility.Utils
 import dagger.hilt.android.AndroidEntryPoint
@@ -58,8 +62,6 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
         if (intent?.extras != null) {
             locality = intent.getStringExtra("locality")
             locationState = intent.getParcelableExtra("locationState")

@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+  <!-- White circular background -->
+  <path
+      android:pathData="M14,14m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0"
+      android:fillColor="#FFFBFF"/>
+
+  <!-- Group containing the sun icon (moved to the center) -->
+  <group android:translateX="6" android:translateY="6">
+    <!-- Sun body -->
+    <path
+        android:pathData="M8,10C8.556,10 9.028,9.806 9.417,9.417C9.806,9.028 10,8.556 10,8C10,7.444 9.806,6.972 9.417,6.583C9.028,6.194 8.556,6 8,6C7.444,6 6.972,6.194 6.583,6.583C6.194,6.972 6,7.444 6,8C6,8.556 6.194,9.028 6.583,9.417C6.972,9.806 7.444,10 8,10Z"
+        android:fillColor="#1C1B1F"/>
+
+    <!-- Sun rays -->
+    <path
+        android:pathData="M8,3.333V1.333M8,15.333V13.333M3.05,12.95L4.7,11.3M12.95,3.05L11.3,4.7M1.333,8.667H2.667M13.333,8.667H14.667M3.05,3.05L4.7,4.7M12.95,12.95L11.3,11.3"
+        android:strokeColor="#1C1B1F"
+        android:strokeWidth="1.5"/>
+  </group>
+</vector>

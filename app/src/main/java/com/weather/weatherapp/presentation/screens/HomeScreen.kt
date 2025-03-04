@@ -1,14 +1,9 @@
 package com.weather.weatherapp.presentation.screens
 
-import android.icu.text.SimpleDateFormat
-import android.media.Image
 import android.os.Build
-import android.util.Log
-import android.widget.Space
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,46 +31,31 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapType
-import com.google.maps.android.compose.MapUiSettings
 import com.weather.weatherapp.R
-import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.presentation.ui.theme.backgroundView
 import com.weather.weatherapp.utility.Utils
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
@@ -84,8 +65,7 @@ fun HomeScreen(
     navigation: (String) -> Unit,
 ) {
     val dayNight = Utils.getInstance(LocalContext.current).getDayOrNight()
-    val sheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    ChangeStatusBarColor()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -156,7 +136,7 @@ fun HomeScreen(
                 }
 
                 Text(
-                    text = "January 18, 16:14",
+                    text = Utils.getInstance(LocalContext.current).getFormattedDate(),
                     fontSize = 16.sp,
                     color = Color.White,
                     modifier = modifier
@@ -171,105 +151,133 @@ fun HomeScreen(
 }
 
 @Composable
-private fun WeatherInfoStatus(
-    modifier: Modifier = Modifier,
-    weatherResponseApi: WeatherResponseApi,
-) {
-    Row(
-        modifier = modifier
-            .padding(20.dp)
-            .wrapContentSize(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+fun ChangeStatusBarColor() {
+    val systemUiController = rememberSystemUiController()
+    val statusBarColor = Color(0xFF704bd2) // Set your desired color
 
-        Spacer(modifier = modifier.padding(3.dp))
-
-        Card(
-            colors = CardDefaults.cardColors().copy(
-                containerColor = colorResource(id = R.color.app_color)
-            ), modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 20.dp)
-                .wrapContentWidth()
-        ) {
-            Row(
-                modifier = modifier
-                    .padding(8.dp)
-                    .wrapContentSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.humidity),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .padding(end = 3.dp)
-                        .size(20.dp)
-                )
-                Text(
-                    text = "90%",
-                    color = colorResource(id = R.color.white),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = modifier.padding(3.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.wind),
-                    contentDescription = "",
-                    modifier = Modifier
-                        .padding(end = 3.dp)
-                        .size(20.dp)
-                )
-                Text(
-                    text = " ${weatherResponseApi.current?.windSpeed10m.toString()} km/h",
-                    color = colorResource(id = R.color.white),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontSize = 18.sp
-                )
-            }
-        }
+    // Apply status bar color
+    SideEffect {
+        systemUiController.setStatusBarColor(color = statusBarColor)
     }
 }
 
 @Composable
-private fun OpenSearch(modifier: Modifier = Modifier, navigation: @Composable () -> Unit) {
-    Card(
-        onClick = {
-            navigation
-        },
-        elevation = CardDefaults.elevatedCardElevation(10.dp),
-        colors = CardDefaults.cardColors(colorResource(id = R.color.app_color)),
-        modifier = modifier
+private fun Statics(
+    image: Painter,
+    staticsTitle: String,
+    staticsValue: String,
+    duration: String = "",
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(color = colorResource(id = R.color.statistics))
     ) {
         Row(
-            modifier = modifier
-                .padding(10.dp)
-                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(10.dp)
+                .width(170.dp)
         ) {
             Image(
-                imageVector = ImageVector.vectorResource(id = R.drawable.flight),
-                contentDescription = "Search Module"
+                painter = image, contentDescription = "", modifier = Modifier.size(28.dp)
             )
-            Spacer(modifier = modifier.size(10.dp))
-            Text(text = "Want to check other location", color = Color.White)
+            Column(
+                verticalArrangement = Arrangement.SpaceAround,
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .wrapContentWidth()
+                    .padding(5.dp)
+            ) {
+                Text(text = staticsTitle, color = Color.Black, fontSize = 16.sp)
+                Spacer(modifier = Modifier.padding(top = 4.dp))
+                Text(text = staticsValue, color = Color.Black, fontSize = 16.sp)
+            }
+            Text(text = duration, Modifier.align(Alignment.Bottom), color = Color.Black)
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
+private fun WeatherInfoStatus(
+    modifier: Modifier = Modifier,
+    weatherResponseApi: WeatherResponseApi,
+) {
+    val item = Utils.getInstance(context = LocalContext.current)
+        .calculateTempAccordingHour(weatherResponseApi.hourly)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        verticalArrangement = Arrangement.SpaceAround,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Statics(
+                painterResource(id = R.drawable.wind),
+                "Wind Speed",
+                "${weatherResponseApi.current?.windSpeed10m.toString()} km/h"
+            )
+            Statics(
+                painterResource(id = R.drawable.uv_index),
+                "UV Index",
+                weatherResponseApi.hourly?.uvIndex?.get(0).toString()
+            )
+        }
+        Spacer(modifier = Modifier.padding(top = 10.dp))
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Statics(
+                painterResource(id = R.drawable.rain),
+                "Rain chance",
+                "${weatherResponseApi.daily.rain_sum[0]} %"
+            )
+            Statics(painterResource(id = R.drawable.humidity), "Humidity", "${item[0].humidity} %")
+
+        }
+        Spacer(modifier = Modifier.padding(top = 10.dp))
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Statics(
+                painterResource(id = R.drawable.sunset), "Sunset", "6:30 PM", "in 4h"
+            )
+            Statics(
+                painterResource(id = R.drawable.sunrise), "Sunrise", "5:00 AM", "in 7h ago"
+            )
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+@Stable
 private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
     val item = Utils.getInstance(context = LocalContext.current).calculateTempAccordingHour(hourly)
 
     val daySelection = remember {
         mutableStateOf("Today")
     }
+    val isWeeklySelected = remember {
+        mutableStateOf(false)
+    }
     Column {
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp),
+                .padding(top = 10.dp, start = 10.dp, end = 10.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Button(
@@ -298,7 +306,7 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
 
             Button(
                 onClick = {
-                    daySelection.value = "7 days"
+                    isWeeklySelected.value = true
                 }, colors = ButtonDefaults.buttonColors().copy(
                     containerColor = if (daySelection.value == "7 days") colorResource(id = R.color.app_color) else colorResource(
                         id = R.color.white
@@ -310,25 +318,29 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
 
         }
 
+        if (isWeeklySelected.value) {
+            WeeklyForCaste()
+        }
         Card(
             colors = CardDefaults.cardColors().copy(
-                containerColor = colorResource(id = R.color.app_color)
+                containerColor = colorResource(id = R.color.statistics)
             ), modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 20.dp)
+                .padding(horizontal = 10.dp, vertical = 10.dp)
                 .fillMaxWidth()
         ) {
-
             Row(
-                modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+                modifier = Modifier
+                    .padding(horizontal = 15.dp, vertical = 10.dp)
+                    .wrapContentSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.hour),
                     contentDescription = "Hourly Forecast Image",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(28.dp)
                 )
                 Spacer(modifier = Modifier.padding(3.dp))
-                Text(text = "Hourly Forecast", color = colorResource(id = R.color.white))
+                Text(text = "Hourly Forecast", color = colorResource(id = R.color.black))
             }
             LazyRow {
                 items(item.filter { daySelection.value == it.day }) { item ->
@@ -336,17 +348,19 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                         modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = item.time, color = colorResource(id = R.color.white))
+                        Text(text = item.time, color = colorResource(id = R.color.black))
                         Spacer(modifier = Modifier.padding(top = 10.dp))
                         Image(
-                            painter = if (getTimeOfDay(item.time) == "Morning") painterResource(id = R.drawable.sun) else painterResource(
+                            painter = if (Utils.getInstance(LocalContext.current)
+                                    .getTimeOfDay(item.time) == "Morning"
+                            ) painterResource(id = R.drawable.sun) else painterResource(
                                 id = R.drawable.moon
                             ), modifier = Modifier.size(30.dp), contentDescription = ""
                         )
-                        Spacer(modifier = Modifier.padding(top = 8.dp))
+                        Spacer(modifier = Modifier.padding(top = 5.dp))
                         Text(
                             text = item.temperature2m.toString() + "°",
-                            color = colorResource(id = R.color.white),
+                            color = colorResource(id = R.color.black),
                             style = MaterialTheme.typography.headlineLarge,
                             fontSize = 18.sp
                         )
@@ -354,37 +368,5 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
                 }
             }
         }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PartialBottomSheet(modifier: Modifier = Modifier) {
-    val bottomSheetHeight = 200.dp
-    var showBottomSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false,
-    )
-}
-
-fun getTimeOfDay(time: String): String {
-    return when {
-        time.contains("AM", ignoreCase = true) -> {
-            val hour = time.substringBefore("AM").trim().toIntOrNull()
-            if (hour == 12 || hour in 1..4) "Night"
-            else if (hour in 5..11) "Morning"
-            else "Invalid time"
-        }
-
-        time.contains("PM", ignoreCase = true) -> {
-            val hour = time.substringBefore("PM").trim().toIntOrNull()
-            if (hour == 12) "Morning"
-            else if (hour in 1..5) "Morning"
-            else if (hour in 6..11) "Night"
-            else "Invalid time"
-        }
-
-        else -> "Invalid time format"
     }
 }

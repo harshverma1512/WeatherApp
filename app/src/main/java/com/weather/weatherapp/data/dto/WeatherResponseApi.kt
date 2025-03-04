@@ -25,8 +25,15 @@ data class WeatherResponseApi(
     @SerializedName("timezone_abbreviation")
     val timezoneAbbreviation: String?,
     @SerializedName("utc_offset_seconds")
-    val utcOffsetSeconds: Int?
+    val utcOffsetSeconds: Int?,
+    @SerializedName("daily")
+    val daily : Daily
 ) {
+    data class Daily(
+        @SerializedName("time") val time: List<String>?,
+        @SerializedName("rain_sum") val rain_sum: List<Int>,
+    )
+
     data class Current(
         @SerializedName("interval")
         val interval: Int?,
@@ -57,7 +64,9 @@ data class WeatherResponseApi(
         @SerializedName("time")
         val time: List<String?>?,
         @SerializedName("wind_speed_10m")
-        val windSpeed10m: List<Double?>?
+        val windSpeed10m: List<Double?>?,
+        @SerializedName("uv_index")
+        val uvIndex: List<Double?>?
     )
 
     data class HourlyUnits(
