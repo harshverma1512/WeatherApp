@@ -3,33 +3,29 @@ package com.weather.weatherapp.presentation
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.widget.EdgeEffect
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -44,9 +40,10 @@ import com.weather.weatherapp.domain.WeatherState
 import com.weather.weatherapp.presentation.screens.BottomNavigationRedirection
 import com.weather.weatherapp.presentation.screens.HomeScreen
 import com.weather.weatherapp.presentation.screens.NavigationItem
+import com.weather.weatherapp.presentation.screens.Screens
 import com.weather.weatherapp.presentation.screens.SearchScreen
 import com.weather.weatherapp.presentation.screens.SplashScreen
-import com.weather.weatherapp.presentation.ui.theme.Purple40
+import com.weather.weatherapp.presentation.screens.WeeklyForCaste
 import com.weather.weatherapp.presentation.viewModel.WeatherViewModel
 import com.weather.weatherapp.utility.Utils
 import dagger.hilt.android.AndroidEntryPoint
@@ -70,11 +67,8 @@ class MainActivity : ComponentActivity() {
             locationState?.let {
                 FetchApiData(it) // Call FetchApiData with valid location
                 Scaffold(bottomBar = {
-                    navController?.let {
-                        BottomNavigationBar(navigationController = it)
-                    }
                 }) { innerPadding ->
-                    NavController(modifier = Modifier.padding(innerPadding))
+                    NavigationGraph(modifier = Modifier.padding(innerPadding))
                 }
 
             } ?: run {
@@ -105,38 +99,16 @@ class MainActivity : ComponentActivity() {
             is WeatherState.Success -> {
                 Timber.d("MainActivity", "Success: ${(weatherState as WeatherState.Success).data}")
                 response = (weatherState as WeatherState.Success).data
+                response?.let { viewModel.setWeatherResponse(it) }
                 navController?.navigate(NavigationItem.Home.route)
             }
         }
     }
 
-    @Composable
-    fun BottomNavigationBar(navigationController: NavController) {
-        val list = listOf(BottomNavigationRedirection.Home, BottomNavigationRedirection.Search)
-
-        BottomNavigation(
-            contentColor = Color.White,
-            backgroundColor = colorResource(id = R.color.app_color),
-            modifier = Modifier.navigationBarsPadding()
-        ) {
-            val currentRoute by navigationController.currentBackStackEntryAsState()
-            val currentDestination = currentRoute?.destination?.route
-
-            list.forEach { item ->
-                BottomNavigationItem(
-                    selected = item.route == currentDestination,
-                    onClick = { navigationController.navigate(item.route) },
-                    icon = { Icon(item.icon, contentDescription = item.title) },
-                    label = { Text(text = item.title) },
-                    alwaysShowLabel = true
-                )
-            }
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
-    fun NavController(modifier: Modifier) {
+    fun NavigationGraph(modifier: Modifier = Modifier) {
         navController = rememberNavController()
         NavHost(
             navController = navController ?: rememberNavController(),
@@ -157,10 +129,26 @@ class MainActivity : ComponentActivity() {
             composable(NavigationItem.SplashScreen.route) {
                 SplashScreen()
             }
+            composable(NavigationItem.Weekly.route) {
+                WeeklyForCaste(
+                    locality = locality,
+                    navigation = { route ->
+                        if (route == Screens.Back.name) {
+                            navController?.popBackStack()
+                        } else {
+                            navController?.navigate(route)
+                        }
+                    })
+            }
             composable(NavigationItem.Search.route) {
-                SearchScreen()
+                SearchScreen() {
+                    if (it == Screens.Back.name) {
+                        navController?.popBackStack()
+                    } else {
+                        navController?.navigate(it)
+                    }
+                }
             }
         }
     }
 }
-

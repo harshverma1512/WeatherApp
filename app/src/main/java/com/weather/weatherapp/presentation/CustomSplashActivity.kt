@@ -13,7 +13,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -106,7 +105,7 @@ class CustomSplashActivity : ComponentActivity() {
                 Toast.makeText(this, "Unable to fetch location", Toast.LENGTH_SHORT).show()
             }
         }.addOnFailureListener {
-            Toast.makeText(this, "Failed to fetch location", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to fetch location please restart your application", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -31,7 +31,8 @@ data class WeatherResponseApi(
 ) {
     data class Daily(
         @SerializedName("time") val time: List<String>?,
-        @SerializedName("rain_sum") val rain_sum: List<Int>,
+        @SerializedName("rain_sum") val rain_sum: List<Double>,
+        @SerializedName("temperature_2m_max") val temperature_2m_max: List<Double>
     )
 
     data class Current(

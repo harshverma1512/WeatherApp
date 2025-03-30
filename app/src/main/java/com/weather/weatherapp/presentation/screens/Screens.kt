@@ -7,11 +7,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 
 enum class Screens {
-    Splash,HomeScreen,Search
+    Splash,HomeScreen,Search, WeeklyScreen,Back
 }
 
 sealed class NavigationItem(val route: String) {
     data object Home : NavigationItem(Screens.HomeScreen.name)
+    data object Back : NavigationItem(Screens.Back.name)
+    data object Weekly : NavigationItem(Screens.WeeklyScreen.name)
     data object SplashScreen : NavigationItem(Screens.Splash.name)
     data object Search : NavigationItem(Screens.Search.name)
 }

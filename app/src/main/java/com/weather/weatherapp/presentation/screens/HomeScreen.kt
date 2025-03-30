@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.navOptions
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.presentation.ui.theme.backgroundView
@@ -65,7 +67,7 @@ fun HomeScreen(
     navigation: (String) -> Unit,
 ) {
     val dayNight = Utils.getInstance(LocalContext.current).getDayOrNight()
-    ChangeStatusBarColor()
+    ChangeStatusBarColor(0xFF704bd2)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -107,7 +109,9 @@ fun HomeScreen(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Cloud Icon",
                         tint = Color.White,
-                        modifier = modifier.size(24.dp)
+                        modifier = modifier.size(24.dp).clickable {
+                            navigation.invoke(Screens.Search.name)
+                        }
                     )
                 }
 
@@ -145,15 +149,15 @@ fun HomeScreen(
                 )
             }
         }
-        WeeklyCard(weatherResponseApi.hourly)
+        WeeklyCard(weatherResponseApi.hourly ,navigation)
         WeatherInfoStatus(modifier, weatherResponseApi)
     }
 }
 
 @Composable
-fun ChangeStatusBarColor() {
+fun ChangeStatusBarColor(l : Long) {
     val systemUiController = rememberSystemUiController()
-    val statusBarColor = Color(0xFF704bd2) // Set your desired color
+    val statusBarColor = Color(l) // Set your desired color
 
     // Apply status bar color
     SideEffect {
@@ -263,7 +267,7 @@ private fun WeatherInfoStatus(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Stable
-private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
+private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, navigation: (String) -> Unit) {
     val item = Utils.getInstance(context = LocalContext.current).calculateTempAccordingHour(hourly)
 
     val daySelection = remember {
@@ -319,7 +323,7 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?) {
         }
 
         if (isWeeklySelected.value) {
-            WeeklyForCaste()
+            navigation(NavigationItem.Weekly.route)
         }
         Card(
             colors = CardDefaults.cardColors().copy(

@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.jetbrains.kotlin.android)
     id("kotlin-kapt")
+    id("com.google.gms.google-services")
     id("com.google.dagger.hilt.android")
 }
 
@@ -118,6 +120,16 @@ dependencies {
 
     //System Bar Color  Change
     implementation (libs.accompanist.systemuicontroller)
+
+    //map
+    implementation(libs.places)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
+
+        // Import the Firebase BoM
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+
 
 
 

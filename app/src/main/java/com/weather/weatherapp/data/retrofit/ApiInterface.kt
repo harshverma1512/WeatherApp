@@ -12,7 +12,7 @@ interface ApiInterface {
         @Query("longitude") longitude: Double,
         @Query("current") current: String,
         @Query("hourly") hourly: String,
-        @Query("daily") daily: String
+        @Query("daily") daily: String,
     ): Response<WeatherResponseApi>
 }
 
