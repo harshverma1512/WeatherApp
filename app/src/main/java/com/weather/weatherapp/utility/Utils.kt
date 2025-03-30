@@ -38,7 +38,7 @@ import java.util.Locale
 class Utils(private val context: Context) {
 
     @Composable
-    fun DialogPop(finish: () -> Unit) {
+    fun DialogPop(title : String , msg : String , finish: () -> Unit) {
         val openDialog = remember {
             mutableStateOf(true)
         }

@@ -6,38 +6,29 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.isPopupLayout
+import androidx.core.os.BundleCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.domain.WeatherState
-import com.weather.weatherapp.presentation.screens.BottomNavigationRedirection
 import com.weather.weatherapp.presentation.screens.HomeScreen
 import com.weather.weatherapp.presentation.screens.NavigationItem
 import com.weather.weatherapp.presentation.screens.Screens
@@ -61,7 +52,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (intent?.extras != null) {
             locality = intent.getStringExtra("locality")
-            locationState = intent.getParcelableExtra("locationState")
+            locationState = intent?.extras?.let {
+                BundleCompat.getParcelable(it, "locationState", Location::class.java)
+            }
+
         }
         setContent {
             locationState?.let {
@@ -72,9 +66,9 @@ class MainActivity : ComponentActivity() {
                 }
 
             } ?: run {
-                Utils.getInstance(this).DialogPop {
+                Utils.getInstance(this).DialogPop(getString(R.string.error), getString(R.string.some_thing_went_wrong)) {
                     finish()
-                } // Show an error dialog if location is not fetched
+                }
             }
         }
     }
@@ -85,7 +79,7 @@ class MainActivity : ComponentActivity() {
         val viewModel: WeatherViewModel = hiltViewModel()
         val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
 
-        LaunchedEffect(Unit) { viewModel.getWeatherResponse(location.latitude, location.longitude) }
+        LaunchedEffect(location) { viewModel.getWeatherResponse(location.latitude, location.longitude) }
 
         when (weatherState) {
             is WeatherState.Error -> {
@@ -141,7 +135,7 @@ class MainActivity : ComponentActivity() {
                     })
             }
             composable(NavigationItem.Search.route) {
-                SearchScreen() {
+                SearchScreen{
                     if (it == Screens.Back.name) {
                         navController?.popBackStack()
                     } else {

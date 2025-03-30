@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.weather.weatherapp.R
 import com.weather.weatherapp.presentation.screens.SplashScreen
 import com.weather.weatherapp.presentation.ui.theme.WeatherAppTheme
 import com.weather.weatherapp.utility.Utils
@@ -48,7 +49,7 @@ class CustomSplashActivity : ComponentActivity() {
                 if (Utils.getInstance(this).isOnline(this)) {
                     getCurrentLocation()
                 } else {
-                    Utils.getInstance(this).DialogPop {
+                    Utils.getInstance(this).DialogPop(getString(R.string.error),getString(R.string.no_internet)) {
                         finish()
                     }
                 }

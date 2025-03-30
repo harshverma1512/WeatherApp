@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">WeatherApp</string>
     <string name="title_activity_custom_splash">CustomSplashActivity</string>
+    <string name="error">Error</string>
+    <string name="no_internet">Please check whether your internet connection or GPS is enabled.</string>
+    <string name="oops">oops</string>
+    <string name="some_thing_went_wrong">Something went wrong</string>
 </resources>

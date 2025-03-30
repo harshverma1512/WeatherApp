@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -26,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -39,8 +41,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
+import com.weather.weatherapp.domain.WeatherState
 import com.weather.weatherapp.presentation.viewModel.WeatherViewModel
 import com.weather.weatherapp.utility.Utils
 @Composable
@@ -50,14 +54,17 @@ fun WeeklyForCaste(
     navigation: (String) -> Unit
 ) {
     ChangeStatusBarColor(0xD0BCFF)
-    // Ensure that locality and weatherResponseApi are not triggering recompositions
-    val rememberedLocality = remember(locality) { locality }
     val viewModel: WeatherViewModel = hiltViewModel()
-    val rememberedWeather = remember { viewModel.getWeatherResponse() }
+
+    val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
+
+    val weatherResponse = if (weatherState is WeatherState.Success) {
+        (weatherState as WeatherState.Success).data
+    } else null
 
     Column(modifier = modifier.fillMaxSize()) {
-        rememberedLocality?.let {
-            Header(locality = it, weatherResponseApi = rememberedWeather, navigation = navigation)
+        locality?.let {
+            Header(locality = it, weatherResponseApi = weatherResponse, navigation = navigation)
         }
 
         LazyColumn(
@@ -65,8 +72,8 @@ fun WeeklyForCaste(
                 .fillMaxSize()
                 .background(color = colorResource(id = R.color.background_color))
         ) {
-            items(7){
-                ForecastItem(daily = rememberedWeather?.daily, position = it)
+            items(7) { index ->
+                ForecastItem(daily = weatherResponse?.daily, position = index)
             }
         }
     }
@@ -217,10 +224,10 @@ fun Header(
             )
         }
 
-        if (daySelection.value == "Today"){
+        if (daySelection.value == "Today") {
             navigation(Screens.Back.name)
-        }else{
-
+        }else if (daySelection.value == "Tomorrow"){
+            navigation(Screens.Back.name)
         }
 
         LazyRow(
