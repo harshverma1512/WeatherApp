@@ -4,6 +4,7 @@ package com.weather.weatherapp.data.dto
 import com.google.gson.annotations.SerializedName
 
 data class WeatherResponseApi(
+    var location : String,
     @SerializedName("current")
     val current: Current?,
     @SerializedName("current_units")

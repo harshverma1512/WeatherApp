@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
     private var response: WeatherResponseApi? = null
     private var navController: NavHostController? = null
     private var locality: String? = null
+    private var redirectionToHomePage = false
     private var locationState: Location? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun FetchApiData(location: Location) {
         val viewModel: WeatherViewModel = hiltViewModel()
-        val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
+        val weatherState by viewModel.weatherState.collectAsState()
 
         LaunchedEffect(location) { viewModel.getWeatherResponse(location.latitude, location.longitude) }
 
@@ -92,9 +93,11 @@ class MainActivity : ComponentActivity() {
 
             is WeatherState.Success -> {
                 Timber.d("MainActivity", "Success: ${(weatherState as WeatherState.Success).data}")
-                response = (weatherState as WeatherState.Success).data
-                response?.let { viewModel.setWeatherResponse(it) }
-                navController?.navigate(NavigationItem.Home.route)
+                if (!redirectionToHomePage){
+                    response = (weatherState as WeatherState.Success).data
+                    navController?.navigate(NavigationItem.Home.route)
+                    redirectionToHomePage = true
+                }
             }
         }
     }

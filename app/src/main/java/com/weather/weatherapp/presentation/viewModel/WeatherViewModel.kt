@@ -25,8 +25,6 @@ class WeatherViewModel @Inject constructor(private val weatherRepository: Weathe
     private val weatherStateResponse = MutableSharedFlow<WeatherState>()
     val weatherState: StateFlow<WeatherState> = weatherStateResponse.stateIn(viewModelScope, SharingStarted.Lazily, WeatherState.Loading)
 
-    private var weatherResponseApi: WeatherResponseApi? = null
-
     private val _latLong = MutableStateFlow<Pair<Double, Double>?>(null)
     val latLong: StateFlow<Pair<Double, Double>?> = _latLong.asStateFlow()
 
@@ -41,13 +39,5 @@ class WeatherViewModel @Inject constructor(private val weatherRepository: Weathe
                 weatherStateResponse.emit(it)
             }
         }
-    }
-
-    fun setWeatherResponse(weatherResponseApi: WeatherResponseApi) {
-        this.weatherResponseApi = weatherResponseApi
-    }
-
-    fun getWeatherResponse(): WeatherResponseApi? {
-        return weatherResponseApi
     }
 }

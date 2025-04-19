@@ -4,6 +4,7 @@ import android.location.Geocoder
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -66,41 +69,59 @@ fun SearchScreen(modifier: Modifier = Modifier, navigation: (String) -> Unit) {
     val viewModel: WeatherViewModel = hiltViewModel()
     val latLong = viewModel.latLong.collectAsState()
     val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
-    val weatherResponseList : MutableList<WeatherResponseApi> = emptyList<WeatherResponseApi>().toMutableList()
-    viewModel.getWeatherResponse()?.let { weatherResponseList.add(it) }
-    var searchKeyWord = ""
+    var showDialog by remember { mutableStateOf(false) }
+    val weatherResponseList = remember {
+        mutableStateListOf<WeatherResponseApi>()
+    }
+
+    var wasSearchTriggered by remember { mutableStateOf(false) }
+    val searchKeyWord = remember {
+        mutableStateOf("")
+    }
     var isGifVisible by remember { mutableStateOf(false) }
 
-    if (isGifVisible) {
-        GifLoader()
-    }
 
-    if (latLong.value != null){
-        LaunchedEffect(latLong) {
-            viewModel.getWeatherResponse(latLong.value?.first!!, latLong.value?.second!!)
+    LaunchedEffect(latLong.value?.first, latLong.value?.second) {
+        latLong.value?.first?.let { first ->
+            latLong.value?.second?.let { second ->
+                viewModel.getWeatherResponse(first, second)
+                wasSearchTriggered = true
+            }
         }
     }
 
-
-    when (weatherState) {
-        is WeatherState.Success -> {
-            val weatherResponse = (weatherState as WeatherState.Success).data
-            viewModel.setWeatherResponse(weatherResponse)
-            isGifVisible = false
-        }
-
-        is WeatherState.Error -> {
-            isGifVisible = false
-            Utils.getInstance(LocalContext.current)
-                .DialogPop("", LocalContext.current.getString(R.string.some_thing_went_wrong)) {
-                    navigation.invoke(Screens.Back.name)
+    LaunchedEffect(weatherState) {
+        if (wasSearchTriggered) {
+            when (weatherState) {
+                is WeatherState.Success -> {
+                    val weatherResponse = (weatherState as WeatherState.Success).data
+                    weatherResponse.location = searchKeyWord.value
+                    weatherResponseList.add(weatherResponse)
+                    isGifVisible = false
+                    wasSearchTriggered = false // Reset
                 }
-        }
 
-        WeatherState.Loading -> {
-            isGifVisible = true
+                is WeatherState.Error -> {
+                    isGifVisible = false
+                    wasSearchTriggered = false
+                    showDialog = true
+                }
+
+                WeatherState.Loading -> {
+                    isGifVisible = true
+                }
+            }
         }
     }
+
+    if (showDialog) {
+        Utils.getInstance(context)
+            .DialogPop("", context.getString(R.string.some_thing_went_wrong)) {
+                showDialog = false
+                navigation.invoke(Screens.Back.name)
+            }
+    }
+
 
     Column(
         modifier = Modifier
@@ -121,16 +142,20 @@ fun SearchScreen(modifier: Modifier = Modifier, navigation: (String) -> Unit) {
                 fontSize = 24.sp
             )
         }
+
         Spacer(modifier = Modifier.height(10.dp))
         SimpleSearchBar { query ->
             isGifVisible = true
             val geocoder = Geocoder(context, Locale.getDefault())
             val addresses = geocoder.getFromLocationName(query, 1)
             if (!addresses.isNullOrEmpty()) {
-                 searchKeyWord = query
+                searchKeyWord.value = query
                 val address = addresses[0]
                 viewModel.setLatLong(address.latitude, address.longitude)
             }
+        }
+        if (isGifVisible) {
+            Utils.getInstance(context).CircularProgressBar()
         }
         LazyColumn(
             modifier = Modifier
@@ -139,14 +164,14 @@ fun SearchScreen(modifier: Modifier = Modifier, navigation: (String) -> Unit) {
                 .padding(top = 10.dp)
         ) {
             items(weatherResponseList.size) { index ->
-                SearchItems(weatherResponseList[index], searchKeyWord)
+                SearchItems(weatherResponseList[index])
             }
         }
     }
 }
 
 @Composable
-fun SearchItems(weatherResponseApi: WeatherResponseApi, searchKeyWord: String) {
+fun SearchItems(weatherResponseApi: WeatherResponseApi) {
     val context = LocalContext.current
     val dayNight = remember { Utils.getInstance(context).getDayOrNight() }
 
@@ -171,14 +196,27 @@ fun SearchItems(weatherResponseApi: WeatherResponseApi, searchKeyWord: String) {
                 .padding(14.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Text(text = weatherResponseApi.current?.temperature2m.toString() + "°", fontSize = 50.sp, fontWeight = Bold, color = Color.White)
+            Text(
+                text = weatherResponseApi.current?.temperature2m.toString() + "°",
+                fontSize = 50.sp,
+                fontWeight = Bold,
+                color = Color.White
+            )
             Row {
-                Text(text = "H:${weatherResponseApi.hourlyUnits?.relativeHumidity2m}", fontSize = 16.sp, color = Color.White)
+                Text(
+                    text = "H:${weatherResponseApi.hourlyUnits?.relativeHumidity2m}",
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
                 Spacer(modifier = Modifier.width(10.dp))
-                Text(text = "L:${weatherResponseApi.hourlyUnits?.windSpeed10m}", fontSize = 16.sp, color = Color.White)
+                Text(
+                    text = "L:${weatherResponseApi.hourlyUnits?.windSpeed10m}",
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
             }
             Text(
-                text = searchKeyWord.ifEmpty { "" },
+                text = weatherResponseApi.location.ifEmpty { "" },
                 fontSize = 16.sp,
                 color = Color.White,
                 modifier = Modifier.padding(top = 6.dp)
@@ -207,18 +245,18 @@ fun SearchItems(weatherResponseApi: WeatherResponseApi, searchKeyWord: String) {
 }
 
 @Composable
-fun SimpleSearchBar( onSearch: (String) -> Unit) {
+fun SimpleSearchBar(onSearch: (String) -> Unit) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
-    OutlinedTextField(value = searchQuery,
+    OutlinedTextField(
+        value = searchQuery,
         onValueChange = {
             searchQuery = it
         },
         label = { Text("Search") },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(
-            topStart = 16.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 16.dp
-        ),
+        shape = RoundedCornerShape(16.dp),
         colors = TextFieldDefaults.outlinedTextFieldColors(
             unfocusedBorderColor = Color(0xFF704bd2)
         ),
@@ -227,22 +265,17 @@ fun SimpleSearchBar( onSearch: (String) -> Unit) {
             Icon(Icons.Default.Search, contentDescription = "Search Icon")
         },
         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
-        // Trigger onSearch when the user presses the search action on the keyboard
-        keyboardActions = KeyboardActions(onSearch = { onSearch(searchQuery.text) }, onDone = {
-            onSearch(searchQuery.text)
-        })
+        keyboardActions = KeyboardActions(
+            onSearch = {
+                keyboardController?.hide() // Hides the keyboard
+                onSearch(searchQuery.text)
+            },
+            onDone = {
+                keyboardController?.hide() // Also handles the done key
+                onSearch(searchQuery.text)
+            }
+        )
     )
 }
 
-@Composable
-fun GifLoader() {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data("https://media.tenor.com/3f5dQ8GuQF8AAAAj/magnifying-glass-searching.gif")
-            .crossfade(true)
-            .allowHardware(false) // IMPORTANT for GIFs
-            .build(),
-        contentDescription = "Searching animation",
-        modifier = Modifier.size(150.dp)
-    )
-}
+

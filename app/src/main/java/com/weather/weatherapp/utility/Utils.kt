@@ -1,33 +1,29 @@
 package com.weather.weatherapp.utility
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.icu.text.SimpleDateFormat
-import android.location.Geocoder
-import android.location.Location
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.weather.weatherapp.data.dto.HourlyTemp
 import com.weather.weatherapp.data.dto.WeatherResponseApi
-import com.weather.weatherapp.presentation.MainActivity
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,7 +31,23 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
-class Utils(private val context: Context) {
+class Utils {
+
+    @Composable
+    fun CircularProgressBar() {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+        ) {
+            CircularProgressIndicator(
+                color = Color(0xFF704bd2), // Purple-ish tone (match your theme)
+                strokeWidth = 4.dp,
+                modifier = Modifier.size(64.dp)
+            )
+        }
+    }
 
     @Composable
     fun DialogPop(title : String , msg : String , finish: () -> Unit) {
@@ -188,7 +200,7 @@ class Utils(private val context: Context) {
 
         fun getInstance(context: Context): Utils {
             return instance ?: synchronized(this) {
-                instance ?: Utils(context).also { instance = it }
+                instance ?: Utils().also { instance = it }
             }
         }
     }

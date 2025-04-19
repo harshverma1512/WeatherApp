@@ -118,6 +118,7 @@ class CustomSplashActivity : ComponentActivity() {
             putExtra("locality", locality)
             putExtra("locationState", locationState)
         })
+        finish()
     }
 
     private fun getAreaName(latitude: Double, longitude: Double): String {
