@@ -53,9 +53,8 @@ fun WeeklyForCaste(
     locality: String?,
     navigation: (String) -> Unit
 ) {
-    ChangeStatusBarColor(0xD0BCFF)
     val viewModel: WeatherViewModel = hiltViewModel()
-
+    ChangeStatusBarColor(0xFF704bd2)
     val weatherState by viewModel.weatherState.collectAsStateWithLifecycle()
 
     val weatherResponse = if (weatherState is WeatherState.Success) {
@@ -104,7 +103,7 @@ fun ForecastItem(daily: WeatherResponseApi.Daily?, position: Int) {
                     Text(
                         text = daily?.time?.get(position).toString(), fontWeight = FontWeight.Medium, fontSize = 14.sp
                     )
-                    Text(text = daily?.temperature_2m_max?.get(position).toString())
+                    Text(text = daily?.temperature_2m_max?.get(position).toString().plus("°C"))
                 }
 
                 Row(
@@ -157,11 +156,9 @@ fun Header(
     val context = LocalContext.current
     val dayNight = remember { Utils.getInstance(context).getDayOrNight() }
 
-    // Store only selected value in a state
     val daySelection = remember { mutableStateOf("7 days") }
     val days = listOf("Today", "Tomorrow", "7 days")
 
-    // Avoid passing the whole object, extract only needed values
     val temperature = remember(weatherResponseApi) { weatherResponseApi?.current?.temperature2m ?: "--" }
 
     Column(
@@ -199,14 +196,14 @@ fun Header(
         ) {
             Row {
                 Text(
-                    text = "$temperature°", // Dynamic temperature
+                    text = "$temperature°C",
                     fontSize = 60.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     modifier = Modifier.padding(top = 10.dp)
                 )
                 Text(
-                    text = "feels like 10",
+                    text = "feels like 35°C",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black,
@@ -224,12 +221,6 @@ fun Header(
             )
         }
 
-        if (daySelection.value == "Today") {
-            navigation(Screens.Back.name)
-        }else if (daySelection.value == "Tomorrow"){
-            navigation(Screens.Back.name)
-        }
-
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -240,7 +231,10 @@ fun Header(
                 DaySelectionButton(
                     text = day,
                     isSelected = daySelection.value == day,
-                    onClick = { daySelection.value = day }
+                    onClick = { daySelection.value = day
+                    if (day == "Today" || day == "Tomorrow")
+                        navigation(Screens.Back.name)
+                    }
                 )
             }
         }

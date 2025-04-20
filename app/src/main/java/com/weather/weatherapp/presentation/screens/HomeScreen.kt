@@ -35,6 +35,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +52,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.navOptions
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.presentation.ui.theme.backgroundView
@@ -67,6 +67,10 @@ fun HomeScreen(
     navigation: (String) -> Unit,
 ) {
     val dayNight = Utils.getInstance(LocalContext.current).getDayOrNight()
+    val daySelection = remember {
+        mutableStateOf("Today")
+    }
+
     ChangeStatusBarColor(0xFF704bd2)
     Column(
         modifier = modifier
@@ -149,8 +153,8 @@ fun HomeScreen(
                 )
             }
         }
-        WeeklyCard(weatherResponseApi.hourly ,navigation)
-        WeatherInfoStatus(modifier, weatherResponseApi)
+        WeeklyCard(weatherResponseApi.hourly ,navigation, daySelection)
+        WeatherInfoStatus(modifier, weatherResponseApi, daySelection)
     }
 }
 
@@ -208,9 +212,11 @@ private fun Statics(
 private fun WeatherInfoStatus(
     modifier: Modifier = Modifier,
     weatherResponseApi: WeatherResponseApi,
+    daySelection: MutableState<String>,
 ) {
     val item = Utils.getInstance(context = LocalContext.current)
-        .calculateTempAccordingHour(weatherResponseApi.hourly)
+        .calculateTempAccordingHour(weatherResponseApi.hourly).filter { it.day == daySelection.value }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -226,12 +232,12 @@ private fun WeatherInfoStatus(
             Statics(
                 painterResource(id = R.drawable.wind),
                 "Wind Speed",
-                "${weatherResponseApi.current?.windSpeed10m.toString()} km/h"
+                "${item[0].windSpeed10m} km/h"
             )
             Statics(
                 painterResource(id = R.drawable.uv_index),
                 "UV Index",
-                weatherResponseApi.hourly?.uvIndex?.get(0).toString()
+               item[0].uvIndex.toString()
             )
         }
         Spacer(modifier = Modifier.padding(top = 10.dp))
@@ -267,15 +273,12 @@ private fun WeatherInfoStatus(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 @Stable
-private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, navigation: (String) -> Unit) {
+private fun WeeklyCard(
+    hourly: WeatherResponseApi.Hourly?,
+    navigation: (String) -> Unit,
+    daySelection: MutableState<String>
+) {
     val item = Utils.getInstance(context = LocalContext.current).calculateTempAccordingHour(hourly)
-
-    val daySelection = remember {
-        mutableStateOf("Today")
-    }
-    val isWeeklySelected = remember {
-        mutableStateOf(false)
-    }
     Column {
 
         Row(
@@ -310,7 +313,7 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, navigation: (String) 
 
             Button(
                 onClick = {
-                    isWeeklySelected.value = true
+                    navigation(NavigationItem.Weekly.route)
                 }, colors = ButtonDefaults.buttonColors().copy(
                     containerColor = if (daySelection.value == "7 days") colorResource(id = R.color.app_color) else colorResource(
                         id = R.color.white
@@ -322,9 +325,6 @@ private fun WeeklyCard(hourly: WeatherResponseApi.Hourly?, navigation: (String) 
 
         }
 
-        if (isWeeklySelected.value) {
-            navigation(NavigationItem.Weekly.route)
-        }
         Card(
             colors = CardDefaults.cardColors().copy(
                 containerColor = colorResource(id = R.color.statistics)

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,6 +21,8 @@ import com.weather.weatherapp.R
 import com.weather.weatherapp.presentation.screens.SplashScreen
 import com.weather.weatherapp.presentation.ui.theme.WeatherAppTheme
 import com.weather.weatherapp.utility.Utils
+import timber.log.Timber
+import java.io.IOException
 import java.util.Locale
 
 @SuppressLint("CustomSplashScreen")
@@ -121,10 +124,21 @@ class CustomSplashActivity : ComponentActivity() {
         finish()
     }
 
-    private fun getAreaName(latitude: Double, longitude: Double): String {
+    @SuppressLint("TimberArgCount")
+    private fun getAreaName(latitude: Double, longitude: Double): String? {
         val geocoder = Geocoder(this, Locale.getDefault())
-        val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-        return (addresses?.firstOrNull()?.subLocality + ", " + addresses?.firstOrNull()?.locality)
+        return try {
+            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+            if (addresses?.isNotEmpty() == true) {
+                addresses[0].locality ?: addresses[0].adminArea ?: addresses[0].countryName
+            } else {
+                Timber.tag("Geocoder").w("%s%s", "%s, ", "No address found for %s", latitude, longitude)
+                null
+            }
+        } catch (e: IOException) {
+            Timber.tag("Geocoder").e(e, "Geocoder failed")
+            null // Or provide a default value/error message
+        }
     }
 }
 
