@@ -35,6 +35,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -52,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.presentation.ui.theme.backgroundView
@@ -64,11 +66,22 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     weatherResponseApi: WeatherResponseApi,
     locality: String,
-    navigation: (String) -> Unit,
+    navigation: NavHostController,
 ) {
     val dayNight = Utils.getInstance(LocalContext.current).getDayOrNight()
     val daySelection = remember {
         mutableStateOf("Today")
+    }
+
+    LaunchedEffect(navigation) {
+        navigation.currentBackStackEntryFlow.collect { backStackEntry ->
+            val result = backStackEntry.savedStateHandle.get<String>("day")
+            result?.let {
+                println("Received: $it")
+                daySelection.value = it
+                backStackEntry.savedStateHandle.remove<String>("day")
+            }
+        }
     }
 
     ChangeStatusBarColor(0xFF704bd2)
@@ -114,7 +127,7 @@ fun HomeScreen(
                         contentDescription = "Cloud Icon",
                         tint = Color.White,
                         modifier = modifier.size(24.dp).clickable {
-                            navigation.invoke(Screens.Search.name)
+                            navigation.navigate(Screens.Search.name)
                         }
                     )
                 }
@@ -275,7 +288,7 @@ private fun WeatherInfoStatus(
 @Stable
 private fun WeeklyCard(
     hourly: WeatherResponseApi.Hourly?,
-    navigation: (String) -> Unit,
+    navigation:NavHostController,
     daySelection: MutableState<String>
 ) {
     val item = Utils.getInstance(context = LocalContext.current).calculateTempAccordingHour(hourly)
@@ -313,7 +326,7 @@ private fun WeeklyCard(
 
             Button(
                 onClick = {
-                    navigation(NavigationItem.Weekly.route)
+                    navigation.navigate(NavigationItem.Weekly.route)
                 }, colors = ButtonDefaults.buttonColors().copy(
                     containerColor = if (daySelection.value == "7 days") colorResource(id = R.color.app_color) else colorResource(
                         id = R.color.white

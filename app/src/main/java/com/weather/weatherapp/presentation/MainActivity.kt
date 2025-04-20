@@ -117,9 +117,7 @@ class MainActivity : ComponentActivity() {
                     response?.let { response ->
                         HomeScreen(weatherResponseApi = response,
                             locality = locality,
-                            navigation = { route ->
-                                navController?.navigate(route)
-                            })
+                            navigation = navController!!)
                     }
                 }
             }
@@ -129,13 +127,7 @@ class MainActivity : ComponentActivity() {
             composable(NavigationItem.Weekly.route) {
                 WeeklyForCaste(
                     locality = locality,
-                    navigation = { route ->
-                        if (route == Screens.Back.name) {
-                            navController?.popBackStack()
-                        } else {
-                            navController?.navigate(route)
-                        }
-                    })
+                    navigation = navController)
             }
             composable(NavigationItem.Search.route) {
                 SearchScreen{

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import com.weather.weatherapp.R
 import com.weather.weatherapp.data.dto.WeatherResponseApi
 import com.weather.weatherapp.domain.WeatherState
@@ -51,7 +52,7 @@ import com.weather.weatherapp.utility.Utils
 fun WeeklyForCaste(
     modifier: Modifier = Modifier,
     locality: String?,
-    navigation: (String) -> Unit
+    navigation: NavHostController?
 ) {
     val viewModel: WeatherViewModel = hiltViewModel()
     ChangeStatusBarColor(0xFF704bd2)
@@ -63,7 +64,9 @@ fun WeeklyForCaste(
 
     Column(modifier = modifier.fillMaxSize()) {
         locality?.let {
-            Header(locality = it, weatherResponseApi = weatherResponse, navigation = navigation)
+            if (navigation != null) {
+                Header(locality = it, weatherResponseApi = weatherResponse, navigation = navigation)
+            }
         }
 
         LazyColumn(
@@ -86,8 +89,7 @@ fun ForecastItem(daily: WeatherResponseApi.Daily?, position: Int) {
             .wrapContentHeight()
             .padding(20.dp)
             .background(
-                color = colorResource(id = R.color.statistics),
-                shape = RoundedCornerShape(15.dp)
+                color = colorResource(id = R.color.statistics), shape = RoundedCornerShape(15.dp)
             )
     ) {
         Row(
@@ -151,7 +153,7 @@ fun Header(
     modifier: Modifier = Modifier,
     locality: String,
     weatherResponseApi: WeatherResponseApi?,
-    navigation: (String) -> Unit
+    navigation: NavHostController
 ) {
     val context = LocalContext.current
     val dayNight = remember { Utils.getInstance(context).getDayOrNight() }
@@ -183,9 +185,11 @@ fun Header(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search Icon",
                 tint = Color.White,
-                modifier = Modifier.size(24.dp).clickable {
-                    navigation(Screens.Search.name)
-                }
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable {
+                        navigation.navigate(Screens.Search.name)
+                    }
             )
         }
 
@@ -232,8 +236,10 @@ fun Header(
                     text = day,
                     isSelected = daySelection.value == day,
                     onClick = { daySelection.value = day
-                    if (day == "Today" || day == "Tomorrow")
-                        navigation(Screens.Back.name)
+                        if (day == "Today" || day == "Tomorrow") {
+                            navigation.previousBackStackEntry?.savedStateHandle?.set("day", day)
+                            navigation.popBackStack()
+                        }
                     }
                 )
             }
